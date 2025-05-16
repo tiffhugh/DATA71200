@@ -1,0 +1,1625 @@
+---
+title: "wnhelth_cariovas"
+author: "Tiffany Hugh"
+date: "2025-04-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#import csv
+brfss <- read.csv("BRFSS_Women_2023.csv")
+```
+What sex is and how this project is just on binary of female and male, does 
+not acknowledge trans, third gender, this could be improve upon. Since gender
+health disperaise can be found. 
+
+This dataset consists of 259,501 respondents, of which 125,521 are male and
+ 133,980 are female. Women make up approximately 52% of the sample. Since the
+focus of this project is on women's health, the data was filtered to include
+only female respondents.
+
+                           # Demogrpahic Descriptive Stats # 
+
+```{r demographic stats, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("tidyverse")
+#install.packages("ggplots2")
+#install.packages("janitor")
+library(tidyverse)
+
+colnames(brfss)
+
+# loop to create percentage for demographic variables 
+percent_summary <- function(df, column) {
+  df %>%
+    count(!!sym(column)) %>%
+    mutate(percent = n / sum(n) * 100)
+}
+
+race_summary <- percent_summary(brfss, "Race")
+income_summary <- percent_summary(brfss, "INCOME3")
+marital_summary <- percent_summary(brfss, "MARITAL")
+insurance_summary <- percent_summary(brfss, "PRIMINS1")
+urban_summary <- percent_summary(brfss, "X_URBSTAT")
+employment_summary <- percent_summary(brfss, "EMPLOY1")
+state_summary <- percent_summary(brfss,"State")
+education_summary <- percent_summary(brfss,"EDUCA")
+```
+
+```{r race demo stat, echo=TRUE}
+# Race Viz 
+library(ggplot2)
+library(forcats)
+race_summary %>%
+  mutate(Race = fct_reorder(Race, percent)) %>%
+  ggplot(aes(x = Race, y = percent)) +
+  geom_col(fill = "#4472C4") + 
+  geom_text(aes(label = sprintf("%.1f%%", percent)), hjust = -0.1, color = "black", size = 3.5) +
+  labs(title = "Race Distribution Of Respondents", x = "Race", y = "Percentage") +
+  coord_flip() +
+  theme_minimal() +
+  expand_limits(y = max(race_summary$percent) + 5)  # ensure room for highest label
+
+```
+In terms of racial distribution, the majority of respondents identified as White
+(77.17%), followed by Black (8.23%) and Hispanic (7.68%) individuals. Smaller 
+proportions of the sample identified as Asian (2.19%), Other Race (3.14%), and 
+American Indian or Alaskan Native (1.59%). There is clear underrepresenatation 
+of women of color not even comprising of 22% of the sample, meaning that
+whitness may influence the generalization of any race-based analyses or findings. 
+
+The largest group, with 47.76% of the participants reporting having completed a 
+college degree. This indicates a relatively high level of educational attainment
+among women in this data. Some college and technical school follows closely with 28%. 
+20.61% of individuals fall into being a high school graduate or having a GED. A 
+very small group, with only 0.97% of participants reporting having completed 
+elementary school. Never attended school or only kindergarten  is the smallest,
+representing just 0.05%. So the majority of the participants (over 75%) have 
+completed at least some post-secondary education (college or technical school).
+This suggests that the sample is relatively well-educated.
+
+```{r income stats, echo=TRUE}
+# income viz
+income_summary %>%
+  mutate(INCOME3 = fct_reorder(INCOME3, percent)) %>%
+  ggplot(aes(x = INCOME3, y = percent)) +
+  geom_col(fill = "#5D6D7E") +
+  geom_text(aes(label = sprintf("%.1f%%", percent)), hjust = -0.1, color = "black", size = 3.5) +
+  labs(title = "Income Distribution", x = "Income", y = "Percentage") +
+  coord_flip() +
+  theme_minimal() +
+  expand_limits(y = max(income_summary$percent) + 5)
+```
+The income distribution among respondents varied widely. The largest proportion 
+of participants reported earning less than $75,000 annually (17.21%), followed
+by those earning less than $150,000 (14.78%) and less than $100,000 (14.63%).
+Notably, 6.90% of respondents reported earning $200,000 or more, while a smaller
+portion (2.25%) reported incomes below $10,000. These figures reflect a sample 
+with a broad range of income levels, skewed slightly toward middle-income brackets.
+
+```{r martial stats, echo=TRUE}
+# marital viz 
+marital_summary %>%
+  mutate(MARITAL = fct_reorder(MARITAL, percent)) %>%
+  ggplot(aes(x = MARITAL, y = percent)) +
+  geom_col(fill = "#A569BD") +
+  geom_text(aes(label = sprintf("%.1f%%", percent)), vjust = -0.5) +
+  labs(title = "Marital Status Distribution", x = "Marital Status", y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+```
+Over half of the respondents were married (52.15%), making it the most common 
+marital status in the sample. This was followed by individuals who were divorced
+(14.84%), never married (13.35%), or widowed (13.79%). A smaller percentage 
+reported being part of an unmarried couple (3.97%) or separated (1.90%). These 
+figures suggest a predominance of stable marital relationships, with a noteworthy 
+portion of the sample also comprising individuals who were previously or never married.
+
+```{r urban vs rural stats, echo=TRUE}
+# urban vs rural
+urban_summary %>%
+  mutate(label = sprintf("%s\n%.1f%%", X_URBSTAT, percent)) %>%
+  ggplot(aes(x = "", y = percent, fill = X_URBSTAT)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  geom_text(aes(label = label), position = position_stack(vjust = 0.5)) +
+  labs(title = "Urban vs Rural Residence") +
+  theme_void()
+
+```
+The sample was predominantly composed of urban respondents, accounting for 
+86.54% of the population, while only 13.46% of individuals reported residing in
+rural areas. This urban-heavy distribution may reflect population density trends
+and could influence analyses related to healthcare access, socioeconomic 
+resources, and lifestyle factors.
+
+```{r emply stats, echo=TRUE}
+# empoly viz 
+employment_summary %>%
+  mutate(EMPLOY1 = fct_reorder(EMPLOY1, percent)) %>%
+  ggplot(aes(x = EMPLOY1, y = percent)) +
+  geom_col(fill = "#A569BD") +
+  geom_text(aes(label = sprintf("%.1f%%", percent)), vjust = -0.3) +
+  labs(title = "Employment Distribution", x = "Employment Status", y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+```
+The largest portion of respondents were employed for wages (42.68%), followed by
+those who were retired (33.64%). Smaller segments of the population included
+individuals who were self-employed (6.79%), homemakers (6.25%), and those unable
+to work (6.00%). A minority reported being students (1.44%) or unemployed, either 
+for less than a year (1.75%) or for a year or more (1.47%)
+
+Even though the dataset did not have age data the respondents were all above 18 
+years old. From our descriptive stats there is range from early twenties, middle 
+aged, and elderly based on marital status, income, and education attainment.  
+
+                              #Health Descriptive Stats# 
+
+```{r health stats, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# health variables
+genhlth_summary   <- percent_summary(brfss, "GENHLTH")
+BMI_summary <- percent_summary(brfss,"BMI_Category")
+smoke_summary <- percent_summary(brfss, "SMOKE100")
+medcost1_summary  <- percent_summary(brfss, "MEDCOST1")
+bphigh6_summary   <- percent_summary(brfss, "BPHIGH6")
+bpmeds1_summary   <- percent_summary(brfss, "BPMEDS1")
+toldhi3_summary   <- percent_summary(brfss, "TOLDHI3")
+cholmed3_summary  <- percent_summary(brfss, "CHOLMED3")
+```
+
+
+```{r gen health, echo=TRUE}
+#gen health 
+ggplot(genhlth_summary, aes(x = "", y = percent, fill = as.factor(GENHLTH))) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  labs(title = "General Health Status", fill = "GENHLTH",
+       y = NULL, x = NULL) +
+  theme_void() +
+  theme(legend.position = "right") +
+  geom_text(aes(label = paste0(round(percent, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 4)
+
+
+
+ggplot(BMI_summary, aes(x = "", y = percent, fill = as.factor(BMI_Category))) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  labs(title = "BMI", fill = "BMI_Category",
+       y = NULL, x = NULL) +
+  theme_void() +
+  theme(legend.position = "right") +
+  geom_text(aes(label = paste0(round(percent, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 4)
+```
+Respondents were asked to rate their general health on a five-point scale 
+ranging from "Excellent" to "Poor." The most common response was "Very Good,"
+reported by 35.6% of participants, followed closely by "Good" (32.6%). Only 
+14.1% of individuals reported being in "Excellent" health. On the lower end of 
+the scale, 13.5% of respondents described their health as "Fair," and just 4.2% 
+reported "Poor" health. Overall, the majority of respondents rated their health 
+positively, with over 80% selecting either "Excellent," "Very Good," or "Good."
+
+In addition to rating their general health, respondents’ body mass index (BMI)
+was categorized into four standard groups: underweight, normal weight, overweight,
+and obese. The majority of individuals fell into either the obese (35.6%) or normal
+weight (31.8%) categories, with 30.8% classified as overweight and a small minority 
+(1.8%) considered underweight. These proportions provide context for understanding 
+self-reported health status, as nearly 83% of respondents rated their health
+positively (i.e., "Excellent," "Very Good," or "Good"). However, the relatively
+high prevalence of obesity may suggest underlying health risks that are not 
+immediately reflected in self-perceptions of general health.
+
+Respondents were also asked if they have smoke 100 cigarettes in their life.
+63% reported no while 36% are categorized as current smokers. 
+
+```{r insurance stats, echo=TRUE}
+# health insurance
+insurance_summary %>%
+  mutate(PRIMINS1 = fct_reorder(PRIMINS1, percent)) %>%
+  ggplot(aes(x = PRIMINS1, y = percent)) +
+  geom_col(fill = "#4472C4") +
+  geom_text(aes(label = sprintf("%.1f%%", percent)), vjust = -0.5) +
+  labs(title = "Health Insurance Types", x = "Insurance Type", y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+
+```
+The majority of respondents reported having employer-sponsored insurance, which 
+accounted for 39.4% of the sample. The next largest group was covered by Medicare 
+(34.7%), followed by those with private insurance at 7.8%, and Medicaid at 6.9%.
+A small portion of respondents indicated they had no health insurance coverage 
+(3.4%). Other reported sources of coverage included military insurance (2.0%), 
+state-sponsored services (2.9%), and other government programs (2.5%). Coverage
+through the Children’s Health Insurance Program (CHIP), Indian Health Service, 
+and Medigap represented less than 1% each of the total responses. These findings 
+suggest that most individuals surveyed had some form of health insurance, with a 
+heavy reliance on employer and government-provided options.
+
+```{r medical cost, echo=TRUE}
+# MEDCOST vixz 
+ggplot(medcost1_summary, aes(x = "", y = percent, fill = as.factor(MEDCOST1))) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  labs(title = "Was there a time in the past 12 months when you needed to see a doctor 
+  but could not because you could not afford it?", fill = "MEDCOST1",
+       y = NULL, x = NULL) +
+  theme_void() +
+  theme(legend.position = "right") +
+  geom_text(aes(label = paste0(round(percent, 1), "%")),
+            position = position_stack(vjust = 0.5), size = 4)
+
+```
+Despite having insurance and ranking general health overall positive, there 
+91% of respondents make it aware that they have had issues Was there a time in 
+the past 12 months when you needed to see a doctor but could not because you
+could not afford it?
+
+                            # High Blood Pressure & Cholesterol  #
+                            
+For cardiovasualr helath there are indicotrs such as blood pressure, cholestical, 
+and diabetes 
+
+```{r bp summary, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+
+# Add question info to each summary
+bphigh6_summary <- bphigh6_summary %>%
+  mutate(Question = "Ever told you have high blood pressure?")
+
+bpmeds1_summary <- bpmeds1_summary %>%
+  mutate(Question = "Are you currently taking medication for high BP?")
+
+library(tidyr)
+
+bp_summary_combined <- bind_rows(
+  bphigh6_summary %>% mutate(Variable = "BPHIGH6", Question = "Ever told you have high blood pressure?"),
+  bpmeds1_summary %>% mutate(Variable = "BPMEDS1", Question = "Are you currently taking medication for high BP?")
+)
+library(dplyr)
+library(tidyr)
+
+bp_summary_combined_clean <- bp_summary_combined %>%
+  mutate(
+    Response = coalesce(BPHIGH6, BPMEDS1)
+  )
+
+ggplot(bp_summary_combined_clean, aes(x = Response, y = percent)) +
+  geom_col(fill = "#5D6D7E") +
+  facet_wrap(~ Question, scales = "free_x") +
+  labs(
+    title = "Summary of High Blood Pressure and Medication Use",
+    x = "Response",
+    y = "Percent"
+  ) +
+  scale_y_continuous(labels = percent_format(scale = 1)) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+```
+Respondents were asked whether they had ever been told they have high blood 
+pressure, and if so, whether they are currently taking medication for it.
+Most respondents (58.8%) reported never having been diagnosed with high blood 
+pressure, while 39.1% said they had. A smaller group (1.4%) reported having high
+blood pressure only during pregnancy, and 0.7% described their condition as borderline.
+Although the group who reported high blood pressure only during pregnancy is 
+relatively small, it is still important to consider.Pregnancy-related hypertension, 
+such as gestational hypertension or preeclampsia, can affect maternal and fetal
+outcomes and may be linked to long-term cardiovascular risk. In terms of treatment,
+33.4% of respondents reported currently taking medication for high blood pressure, 
+while 5.6% were not. It is important to note that missing responses in the medication 
+question often reflect participants who did not have high blood pressure and therefore
+were not asked this follow-up question. Rather than treating these as missing at 
+random, they are retained in the data to preserve the full context. Overall, 
+this descriptive summary highlights how high blood pressure, especially when 
+experienced during pregnancy, intersects with broader issues in women’s health and 
+the importance of tracking both diagnosis and treatment.
+
+```{r chol stats, echo=TRUE}
+# percent summaries
+toldhi3_summary   <- percent_summary(brfss, "TOLDHI3")
+cholmed3_summary  <- percent_summary(brfss, "CHOLMED3")
+
+# add a new column to identify each question
+toldhi3_summary$Question <- "Ever told you have high cholesterol?"
+cholmed3_summary$Question <- "Are you taking medication for high cholesterol?"
+
+# combine one data frame
+chol_summary_combined <- bind_rows(toldhi3_summary, cholmed3_summary)
+
+chol_summary_long <- chol_summary_combined %>%
+  rename(Response = TOLDHI3, Variable = CHOLMED3) %>%
+  mutate(Response = ifelse(is.na(Response), Variable, Response)) %>%
+  select(Response, percent, Question)
+
+ggplot(chol_summary_long, aes(x = Response, y = percent)) +
+  geom_col(fill = "darkorchid") +
+  facet_wrap(~ Question, scales = "free_x") +
+  labs(
+    title = "Summary of High Cholesterol and Cholesterol Medication Use",
+    x = "Response",
+    y = "Percent"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+cholchk3_summary <- percent_summary(brfss, "CHOLCHK3")
+cholchk3_summary$Question <- "When was your cholesterol last checked?"
+
+
+ggplot(cholchk3_summary, aes(x = reorder(CHOLCHK3, -percent), y = percent)) +
+  geom_col(fill = "orchid") +
+  labs(
+    title = "Last Time Cholesterol Was Checked",
+    x = "Response",
+    y = "Percent"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+In exploring women’s health through the lens of cholesterol management, a notable
+portion of respondents—approximately 41%—reported having been told they have high
+cholesterol. However, among all participants, fewer than 30% reported currently 
+taking medication to manage it. This gap could reflect issues of access, awareness, 
+or differences in perceived need for treatment. Additionally, the majority of 
+respondents (81%) indicated that their cholesterol was checked within the past 
+year, suggesting strong engagement with preventive healthcare practices. Yet, a 
+smaller portion—around 2.5%—reported not having had their cholesterol checked in
+five or more years, underscoring the importance of continued efforts to reach those 
+who may be under-screened. These trends offer insight into patterns of screening 
+and management that may help inform targeted interventions, particularly as they 
+relate to cardiovascular risk in women.
+
+```{r diabetes, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+# summaries
+diabete4_summary <- percent_summary(brfss, "DIABETE4")
+diabtype_summary <- percent_summary(brfss, "DIABTYPE")
+insulin1_summary <- percent_summary(brfss, "INSULIN1")
+
+# question labels
+diabete4_summary$Question <- "Have you ever been told you have diabetes?"
+diabtype_summary$Question <- "What type of diabetes were you told you have?"
+insulin1_summary$Question <- "Are you currently taking insulin?"
+
+# standardize column names 
+diabete4_summary <- diabete4_summary %>%
+  rename(Response = DIABETE4)
+
+diabtype_summary <- diabtype_summary %>%
+  rename(Response = DIABTYPE)
+
+insulin1_summary <- insulin1_summary %>%
+  rename(Response = INSULIN1)
+
+diabetes_combined <- bind_rows(diabete4_summary, diabtype_summary, insulin1_summary)
+```
+Among respondents, a large majority (83.1%) reported never being diagnosed with
+diabetes, while 12.9% indicated a confirmed diagnosis. Notably, 1.4% of respondents
+reported being diagnosed with diabetes only during pregnancy—a key indicator of 
+gestational diabetes, which is a critical concern in women’s health as it can 
+increase the risk for both maternal and infant complications. Additionally, 2.5% 
+were told they had borderline or pre-diabetes, highlighting early risk that may be
+managed with lifestyle changes. When asked about the type of diabetes, most who 
+answered specified type 2 diabetes (4.4%), while a smaller group reported type 1 
+diabetes (0.4%). However, over 95% of respondents were not asked this question,
+likely because it only applied to those who confirmed a diagnosis. Similarly, in 
+terms of insulin use, 1.6% of respondents reported currently taking insulin, while 
+3.2% said they were not; again, the majority were not asked due to skipping logic.
+These findings reflect both the overall burden of diabetes and its unique implications 
+for women, especially in relation to pregnancy and gestational diabetes.
+
+                    # Cardiovasular Disease#
+                    
+```{r cardiovas summary, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)  
+
+#summary of cardiovasular health
+heartattack_summary   <- percent_summary(brfss, "CVDINFR4")
+stroke_summary   <- percent_summary(brfss, "CVDSTRK3")
+CHD_summary   <- percent_summary(brfss, "CVDCRHD4")
+
+# question labels
+heartattack_summary$Question <- "Heart attack"
+stroke_summary$Question <- "Stroke"
+CHD_summary$Question <- "Coronary Heart Disease"
+
+cvd_summary_combined <- bind_rows(heartattack_summary, stroke_summary, CHD_summary)
+
+cvd_long <- cvd_summary_combined %>%
+  pivot_longer(cols = c(CVDINFR4, CVDSTRK3, CVDCRHD4),
+               names_to = "Condition",
+               values_to = "Response") %>%
+  filter(!is.na(Response)) %>%
+  mutate(
+    Question = str_wrap(Question, width = 40),
+    label = paste0(n, " (", round(percent, 1), "%)")
+  )
+
+ggplot(cvd_long, aes(x = Response, y = percent)) +
+  geom_col(fill = "#4472C4") +
+  geom_text(aes(label = label), vjust = -0.3, size = 4) +
+  facet_wrap(~ Question, scales = "free_x") +
+  labs(
+    title = "Cardiovascular Conditions Among Women",
+    x = "Response",
+    y = "Percent"
+  ) +
+  scale_y_continuous(labels = percent_format(scale = 1), expand = expansion(mult = c(0, 0.1))) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold", size = 16)
+  )
+```
+Cardiovascular disease remains a leading cause of mortality, particularly for 
+women whose symptoms and risks are often underrecognized. In this dataset, 3.7%
+of respondents reported being told they had a heart attack (myocardial infarction),
+while 3.9% reported having experienced a stroke. Additionally, 4.2% reported being
+told they had angina or coronary heart disease. While these percentages may appear 
+small, they represent thousands of women whose cardiovascular health may require 
+long-term monitoring, treatment, or intervention. These self-reported metrics 
+provide important insights into how cardiovascular conditions are distributed and 
+understood among survey participants, underscoring the importance of routine 
+checkups and early detection—especially for women, who often present different 
+symptoms than men and may be misdiagnosed or undertreated. Including questions
+about cardiovascular history in women's health screenings could support more
+equitable healthcare outcomes.
+
+         # Indicator: High Blood Pressure Chi-Sqaured Test# 
+
+```{r, echo=TRUE}
+#education - recode for chi-square
+brfss <- brfss %>%
+  mutate(edu_group = case_when(
+    EDUCA %in% c("Never attended school or only kindergarten", "Elementary") ~ "Low",
+    EDUCA %in% c("Some high school","High school graduate or GED") ~ "Medium",
+    EDUCA %in% c("Some college or technical school", 
+                 "College graduate") ~ "High",
+    TRUE ~ NA_character_
+  ))
+#look only at edu and bp
+edu_hyp_clean <- brfss %>%
+  filter(!is.na(edu_group),
+         BPHIGH6 %in% c("Yes", "Yes, during pregnancy", "No"))
+
+
+# contingency table
+edu_hyp_table <- table(edu_hyp_clean$edu_group, edu_hyp_clean$BPHIGH6)
+
+# Chi-square test
+chisq.test(edu_hyp_table)
+
+# row-wise proportions
+prop.table(edu_hyp_table, margin = 1)
+
+# stdresiduals
+chisq.test(edu_hyp_table)$stdres 
+```
+Pearson’s Chi-squared test revealed a statistically significant association between education level and blood pressure status (χ² = 1378.2, df = 2, p < 2.2e-16), indicating that these two variables are not independent of each other. Individuals with higher education were less likely to report high blood pressure (37.1%) compared to those with medium (48.8%) or low education (47.2%). Standardized residuals underscore this trend: respondents in the high education group had significantly fewer cases of high blood pressure than expected (–37.1), while those with medium education had more than expected (+36.3). Although the low education group represents a smaller proportion of the overall sample, its deviation was still notable (+5.5). These findings align with assumptions that education may serve as a protective factor, potentially through pathways like improved health literacy and access to preventive care.
+
+```{r, echo=TRUE}
+#income and bp
+income_hyp <- brfss %>%
+  filter(!is.na(INCOME3), BPHIGH6 %in% c("Yes", "Yes, during pregnancy", "No"))
+
+income_table <- table(income_hyp$INCOME3, income_hyp$BPHIGH6)
+chisq.test(income_table)
+# proportion of income and relationship to bp
+prop.table(income_table, margin = 1)  
+
+# Overall proportions, rounded (%)
+round(prop.table(income_table) * 100, 1)
+
+# std. residuals
+chisq.test(income_table)$stdres 
+```
+The analysis of the relationship between income level and high blood pressure revealed a statistically significant association, as indicated by the Pearson's Chi-squared test (X-squared = 5256.2, p-value < 2.2e-16). The proportions show that individuals in higher income brackets generally have lower rates of high blood pressure, with 78.67% of those earning $200,000 or more reporting no high blood pressure, compared to only 53.58% of those earning less than $10,000. This suggests that lower income is associated with a higher likelihood of high blood pressure. Standardized residuals further highlight these disparities, with significant deviations from expected values, especially in the higher-income groups, indicating a strong relationship between income and blood pressure status. These findings suggest that socioeconomic factors may play a crucial role in determining health outcomes, particularly the prevalence of high blood pressure.
+
+
+```{r, echo=TRUE}
+#race and bp
+race_hyp <- brfss %>%
+  filter(!is.na(Race), BPHIGH6 %in% c("Yes", "Yes, during pregnancy", "No"))
+
+race_table <- table(race_hyp$Race, race_hyp$BPHIGH6)
+chisq.test(race_table)
+prop.table(race_table, margin = 1)
+round(prop.table(race_table) * 100, 1)
+
+# Std.residuals
+chisq.test(race_table)$stdres 
+```
+The relationship between race and high blood pressure  was analyzed using Pearson's Chi-squared test, which yielded a highly significant result (X-squared = 2014.6, p-value < 2.2e-16). The proportions show notable variations across different racial groups, with the highest incidence of high blood pressure among Black individuals (55.42% reporting high blood pressure), followed by White individuals (39.92%). American Indian/Alaskan Native and Asian groups had relatively lower rates of high blood pressure, with only 43.48% and 25.01% reporting high blood pressure, respectively. Standardized residuals further highlight significant deviations from expected values, particularly for Black and Hispanic populations. For Black individuals, the negative residual indicates a lower-than-expected frequency of "No" responses (i.e., no high blood pressure), while the positive residual for "Yes" indicates a higher-than-expected prevalence of high blood pressure. Similarly, Hispanic individuals exhibited a higher-than-expected rate of high blood pressure. 
+
+```{r, echo=TRUE}
+# insurance and bp
+insurance_hyp <- brfss %>%
+  filter(!is.na(PRIMINS1), BPHIGH6 %in% c("Yes", "Yes, during pregnancy", "No"))
+
+insurance_table <- table(insurance_hyp$PRIMINS1, insurance_hyp$BPHIGH6)
+chisq.test(insurance_table)
+prop.table(insurance_table, margin = 1)
+
+# residuals of chi-square
+round(prop.table(insurance_table) * 100, 1)
+chisq.test(insurance_table)$stdres
+
+library(tidyverse)
+
+prop_df <- as.data.frame(prop.table(insurance_table, margin = 1)) %>%
+  rename(Insurance = Var1, BP_Status = Var2, Proportion = Freq)
+
+ggplot(prop_df, aes(x = Insurance, y = Proportion, fill = BP_Status)) +
+  geom_bar(stat = "identity", position = "fill") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_manual(values = c("No" = "#FFB6C1", "Yes" = "#8A2BE2")) +
+  labs(
+    title = "Blood Pressure Status by Insurance Type",
+    x = "Insurance Type",
+    y = "Percentage",
+    fill = "High Blood Pressure"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+A chi-square test of independence was conducted to examine the relationship between insurance type and blood pressure status (categorized as "Yes" for high BP and "No" for normal BP). The results indicated a significant association between the two variables.
+
+Standardized residuals revealed that individuals with Medicare were overrepresented among those with high blood pressure (std. residual = +99.05), whereas those with Employer Insurance were significantly underrepresented in the high blood pressure group (std. residual = -76.12). Similarly, those with No Coverage and Private Insurance also had fewer cases of high blood pressure than expected (std. residuals = -18.75 and -15.75, respectively).
+
+To contextualize these findings, row-wise proportions show that 57.99% of individuals with Medicare reported high blood pressure, compared to only 27.07% of those with Employer Insurance and 25.89% of those with No Coverage. This suggests that insurance types commonly associated with older adults or those with chronic conditions (e.g., Medicare, Medigap) tend to have higher proportions of individuals with elevated blood pressure, consistent with expectations based on age and health risk.
+
+These findings suggest a non-random relationship between blood pressure status and type of insurance coverage, potentially reflecting broader demographic or access-to-care differences among insured populations.
+ 
+```{r, echo=TRUE}
+# taking medicine 
+htn_mgmt <- brfss %>%
+  filter(BPHIGH6 %in% c("Yes", "No"),
+         BPMEDS1 %in% c("Yes", "No"))
+
+htn_mgmt_table <- table(htn_mgmt$BPHIGH6, htn_mgmt$BPMEDS1)
+
+# proportions by diagnosis status
+prop.table(htn_mgmt_table, margin = 1)
+
+chisq.test(htn_mgmt_table)
+round(prop.table(htn_mgmt_table) * 100, 1)
+chisq.test(htn_mgmt_table)$stdres
+```
+A Chi-squared test was conducted to examine the relationship between being diagnosed with high blood pressure (BPHIGH6) and taking medication for it (BPMEDS1). The analysis showed a highly significant association (X² = 26,418, df = 1, p < 2.2e-16), suggesting a strong relationship between diagnosis and medication use. Among individuals who reported being diagnosed with high blood pressure, 85.5% reported taking medication to manage it, while 14.5% did not. The standardized residuals indicate that far more individuals with hypertension take medication than would be expected under independence (residual = 162.54), highlighting a strong adherence to treatment among those diagnosed. Overall, these findings point to effective treatment uptake among diagnosed individuals.
+
+```{r, echo=TRUE}
+# health insurance and bp medication 
+htn_insurance <- brfss %>%
+  filter(BPHIGH6 == "Yes", !is.na(PRIMINS1), !is.na(BPMEDS1))
+
+insurance_meds_table <- table(htn_insurance$PRIMINS1, htn_insurance$BPMEDS1)
+chisq.test(insurance_meds_table)
+
+prop.table(insurance_meds_table, margin = 1)
+round(prop.table(insurance_meds_table) * 100, 1)
+chisq.test(insurance_meds_table)$stdres
+```
+The chi-squared test revealed a statistically significant association between type of insurance and whether individuals take blood pressure medication (χ² = 2136.3, df = 10, p < 2.2e-16). Notably, individuals with Medicare were far more likely than expected to report taking blood pressure medication, with 91.6% of Medicare recipients doing so and a standardized residual of +40.83, indicating a strong positive deviation from the expected count. In contrast, individuals with employer insurance or no coverage were significantly less likely to take blood pressure medication than expected, with standardized residuals of −24.49 and −25.49 respectively. These patterns suggest that insurance type—likely reflecting differences in age, access to care, and health status—plays a substantial role in whether individuals receive treatment for high blood pressure.
+
+
+              # Indicator: Cholesterol Chi-Squared Test# 
+ 
+ 
+```{r, echo=TRUE}
+# Education and cholesterol 
+brfss <- brfss %>%
+  mutate(edu_group = case_when(
+    EDUCA %in% c("Never attended school or only kindergarten", "Elementary") ~ "Low",
+    EDUCA %in% c("Some high school", "High school graduate or GED") ~ "Medium",
+    EDUCA %in% c("Some college or technical school", "College graduate") ~ "High",
+    TRUE ~ NA_character_
+  ))
+
+edu_chol_clean <- brfss %>%
+  filter(!is.na(edu_group),
+         TOLDHI3 %in% c("Yes", "No"))  
+
+edu_chol_table <- table(edu_chol_clean$edu_group, edu_chol_clean$TOLDHI3)
+# Chi-squared test
+chisq.test(edu_chol_table)
+prop.table(edu_chol_table, margin = 1)
+round(prop.table(edu_chol_table) * 100, 1)
+chisq.test(edu_chol_table)$stdres
+```
+The Pearson's Chi-squared test reveals a significant association between education level and being told one has high cholesterol (X-squared = 241.72, p-value < 2.2e-16). Proportions show that 45.6% of individuals with high education were not told they have high cholesterol, while 30.1% were told they have high cholesterol. In contrast, individuals with low education had only 0.6% in the "No" category and 0.5% in the "Yes" category, indicating a higher likelihood of being informed about high cholesterol. The standardized residuals suggest that higher education is overrepresented in the "No" category and underrepresented in the "Yes" category, while lower education shows the opposite pattern. These results suggest that education level is significantly associated with whether an individual is informed about high cholesterol.
+
+```{r, echo=TRUE}
+#income and chol
+chol_income_table <- table(income_hyp$INCOME3, income_hyp$TOLDHI3)
+chisq.test(chol_income_table)
+#proportion of income and relationship to bp
+prop.table(chol_income_table, margin = 1) 
+round(prop.table(chol_income_table) * 100, 1)
+chisq.test(chol_income_table)$stdres
+```
+A chi-squared test indicated a statistically significant relationship between income
+and the likelihood of having high cholesterol. The results show that individuals in
+higher income brackets are less likely to report being told they have high cholesterol.
+For instance, only 30.5% of those earning $200,000 or more reported high cholesterol, 
+compared to 51.1% of those earning less than $15,000. These disparities may reflect
+differences in diet, access to healthcare, preventive screenings, and overall
+health literacy across income groups.
+
+```{r, echo=TRUE}
+#race and chol
+race_table <- table(brfss$Race, brfss$TOLDHI3)
+chisq.test(race_table)
+
+prop.table(race_table, margin = 1) 
+round(prop.table(race_table) * 100, 1)
+chisq.test(race_table)$stdres
+```
+A chi-squared test revealed a statistically significant relationship between race
+and being told one has high cholesterol. While the majority of all racial groups
+reported not being told they had high cholesterol, White respondents had the highest 
+proportion of diagnoses (42.5%), followed by Black respondents (39.5%). In contrast,
+Hispanic and Asian respondents had the lowest rates of high cholesterol diagnoses 
+(32.1% and 35.2% respectively). This disparity may reflect differences in healthcare
+access, screening practices, or underlying risk factors across racial groups.
+
+```{r, echo=TRUE}
+#insurance and chol
+insurance_table <- table(brfss$PRIMINS1, brfss$TOLDHI3)
+chisq.test(insurance_table)
+
+prop.table(insurance_table, margin = 1) 
+chisq.test(insurance_table)$stdres
+```
+Chi-squared test indicated a significant association between type of insurance 
+coverage and whether respondents reported having cardiovascular disease.
+Respondents with Medicare and Medigap had the highest proportions of reported 
+cardiovascular disease (54.99% and 59.83%, respectively), while those with no 
+insurance coverage or CHIP had the lowest rates (27.32% and 29.55%).
+
+These findings suggest that individuals with age-related or supplemental insurance
+are more likely to report having cardiovascular disease, likely reflecting age and
+health status differences across insurance types. Also among not coverage are
+not aware of medical conditions. 
+
+```{r, echo=TRUE}
+# taking medicine 
+chol_mgmt <- brfss %>%
+  filter(TOLDHI3 %in% c("Yes", "No"),
+         CHOLMED3 %in% c("Yes", "No"))
+
+chol_mgmt_table <- table(chol_mgmt$TOLDHI3, chol_mgmt$CHOLMED3)
+
+# proportions by diagnosis status
+prop.table(chol_mgmt_table, margin = 1)
+
+chisq.test(chol_mgmt_table)
+
+round(prop.table(chol_mgmt_table) * 100, 1)
+chisq.test(chol_mgmt_table)$stdres
+```
+Chi-squared test revealed a statistically significant relationship between being 
+diagnosed with high cholesterol and taking cholesterol-lowering medication.
+
+Among individuals diagnosed with high cholesterol, 60.6% reported taking medication 
+to manage it. In contrast, among those not diagnosed, only 6.4% reported taking 
+medication, which makes sense given they wouldn't typically be prescribed such
+medication.
+
+This suggests a strong association between diagnosis and treatment adherence.
+However, the 39.4% of diagnosed individuals not taking medication may indicate
+gaps in access, cost, awareness, or preference, which are important areas for 
+further public health investigation.
+
+```{r, echo=TRUE}
+# health insurance and chol medication 
+chol_insurance <- brfss %>%
+  filter(CHOLMED3 == "Yes", !is.na(PRIMINS1), !is.na(CHOLMED3))
+
+insurance_meds_table <- table(htn_insurance$PRIMINS1, htn_insurance$CHOLMED3)
+chisq.test(insurance_meds_table)
+
+prop.table(insurance_meds_table, margin = 1)
+
+round(prop.table(insurance_meds_table) * 100, 1)
+chisq.test(insurance_meds_table)$stdres
+
+```
+The Chi-squared test result is statistically significant, indicating that the 
+type of insurance coverage is related to whether people use medication for cholesterol
+management. For example, Medigap insurance shows that 60.34% of individuals use
+medication, suggesting that those with more comprehensive insurance may have better
+access to healthcare resources. Additionally, Medicaid, Medicare, and other 
+government insurance programs demonstrate higher rates of cholesterol medication 
+usage compared to those with no coverage, highlighting how insurance access can
+influence health outcomes like cholesterol management for women.
+
+             # K-Means - Who are the subgroups of women at risk?#
+```{r setup5, include=FALSE}     
+library(dplyr)
+library(caret)
+
+# subsetting for chol and bp
+brfss$risk_group <- case_when(
+  brfss$BPHIGH6 == "Yes" & brfss$TOLDHI3 == "Yes" ~ "Both",
+  brfss$BPHIGH6 == "Yes" & brfss$TOLDHI3 == "No" ~ "BP Only",
+  brfss$BPHIGH6 == "No" & brfss$TOLDHI3 == "Yes" ~ "Chol Only",
+  brfss$BPHIGH6 == "No" & brfss$TOLDHI3 == "No" ~ "Neither",
+  brfss$BPHIGH6 == "Yes, pregnant only" & brfss$TOLDHI3 == "No" ~ "Pregnancy-related BP",
+  brfss$BPHIGH6 == "Borderline" & brfss$TOLDHI3 == "No" ~ "Borderline BP"
+)
+
+#filter for "at risk" 
+at_risk_df <- brfss %>% 
+  filter(risk_group != "Neither")  # Excluding the "Neither" group
+
+
+# variables selected that have to one-hot 
+cat_vars <- at_risk_df %>%
+  select(Race, EDUCA, INCOME3, PRIMINS1)
+
+# dummy variables
+dummies <- dummyVars(" ~ .", data = cat_vars)
+encoded_data <- predict(dummies, newdata = cat_vars)
+
+
+encoded_df <- as.data.frame(encoded_data)
+
+#std
+scaled_data <- scale(encoded_df)
+
+# determine how many clusters 
+wss <- vector()
+
+for (k in 1:10) {
+  kmeans_result <- kmeans(scaled_data, centers = k, nstart = 25)
+  wss[k] <- kmeans_result$tot.withinss
+}
+
+plot(1:10, wss, type = "b", 
+     xlab = "Number of Clusters (k)", 
+     ylab = "Within groups sum of squares")
+
+```
+K-means clustering was applied to the demographic variables—race, education, income,
+and insurance status—to identify meaningful subgroups of women potentially at 
+cardiovascular risk without overfitting. The elbow method was used to evaluate
+how within-cluster variability decreased as the number of clusters increased.
+k = 3 was selecyed because the point represent a noticeable "elbow"—after which
+adding more clusters results in diminishing improvements in cohesion. 
+
+
+```{r setup6, include=FALSE}   
+library(cluster)
+library(factoextra)
+library(dplyr)
+
+set.seed(123)
+k3 <- kmeans(scaled_data, centers = 3, nstart = 25)
+
+# cluster labels
+at_risk_df$cluster_k3 <- as.factor(k3$cluster)
+
+
+fviz_cluster(k3, data = scaled_data,
+            geom = "point",
+            ellipse.type = "norm",
+            main = "K-means Clustering (k=3)",
+            palette = c("#2E9FDF", "#00AFBB", "#EC720E"))
+
+# Test each variable's contribution
+test_vars <- c("MARITAL", "EMPLOY1", "X_URBSTAT")
+for(var in test_vars) {
+  temp_cat_vars <- at_risk_df %>%
+    select(Race, EDUCA, INCOME3, PRIMINS1, {{var}})
+  
+  # Create dummy variables and scale
+  dummies_temp <- dummyVars(" ~ .", data = temp_cat_vars)
+  encoded_temp <- predict(dummies_temp, newdata = temp_cat_vars)
+  scaled_temp <- scale(as.data.frame(encoded_temp))
+  
+  # Compare clustering quality
+  kmeans_test <- kmeans(scaled_temp, centers = 3, nstart = 25)
+  print(paste("Silhouette score with", var, ":"))
+  print(kmeans_test$betweenss/kmeans_test$tot.withinss)
+}
+```
+I wanted to include other demographic variables for cluster but adding too many 
+would cause issues. So I found the Silhouette scores, which measure how well each
+variable helps separate clusters in the data for martial status(0.099),
+employment(0.096),and urban vs rural(0.116). All three variables show very similar, 
+low scores. Since they're all clustered near zero, none of these variables effectively
+contribute to forming distinct groups. They could actually be diluting the effectiveness 
+of your existing variables (Race, EDUCA, INCOME3, PRIMINS1), so they will not be included.
+
+
+```{r setup7, include=FALSE}   
+# summary of cluster characteristics
+cluster_summary <- at_risk_df %>%
+  group_by(cluster_k3) %>%
+  summarise(
+    # Race 
+    White = mean(Race == "White", na.rm = TRUE),
+    Black = mean(Race == "Black", na.rm = TRUE),
+    Hispanic = mean(Race == "Hispanic", na.rm = TRUE),
+    Other_Race = mean(Race == "Other Race", na.rm = TRUE),
+    American_Indian_Alaskan_Native = mean(Race == "American Indian/Alaskan Native", na.rm = TRUE),
+    
+    # Education 
+    College_Graduate = mean(EDUCA == "College graduate", na.rm = TRUE),
+    Some_College_or_Tech = mean(EDUCA == "Some college or technical school", na.rm = TRUE),
+    HighSchool_GED = mean(EDUCA == "High school graduate or GED", na.rm = TRUE),
+    Some_HighSchool = mean(EDUCA == "Some high school", na.rm = TRUE),
+    Elementary = mean(EDUCA == "Elementary", na.rm = TRUE),
+    Never_Attended = mean(EDUCA == "Never attended school or only kindergarten", na.rm = TRUE),
+
+    # Income 
+    INCOME_200k_plus = mean(INCOME3 == "$200,000 or more", na.rm = TRUE),
+    INCOME_lt_200k = mean(INCOME3 == "Less than $200,000", na.rm = TRUE),
+    INCOME_lt_150k = mean(INCOME3 == "Less than $150,000", na.rm = TRUE),
+    INCOME_lt_100k = mean(INCOME3 == "Less than $100,000", na.rm = TRUE),
+    INCOME_lt_75k = mean(INCOME3 == "Less than $75,000", na.rm = TRUE),
+    INCOME_lt_50k = mean(INCOME3 == "Less than $50,000", na.rm = TRUE),
+    INCOME_lt_35k = mean(INCOME3 == "Less than $35,000", na.rm = TRUE),
+    INCOME_lt_25k = mean(INCOME3 == "Less than $25,000", na.rm = TRUE),
+    INCOME_lt_20k = mean(INCOME3 == "Less than $20,000", na.rm = TRUE),
+    INCOME_lt_15k = mean(INCOME3 == "Less than $15,000", na.rm = TRUE),
+    INCOME_lt_10k = mean(INCOME3 == "Less than $10,000", na.rm = TRUE),
+
+    # Insurance 
+    Employer = mean(PRIMINS1 == "Employer Insurance", na.rm = TRUE),
+   Medicare = mean(PRIMINS1 == "Medicare", na.rm = TRUE),
+    Medicaid = mean(PRIMINS1 == "Medicaid", na.rm = TRUE),
+    Medigap = mean(PRIMINS1 == "Medigap", na.rm = TRUE),
+    Private = mean(PRIMINS1 == "Private", na.rm = TRUE),
+   Military = mean(PRIMINS1 == "Military", na.rm = TRUE),
+    State = mean(PRIMINS1 == "State Sponsored Service", na.rm = TRUE),
+   NoCoverage = mean(PRIMINS1 == "No coverage", na.rm = TRUE),
+    Gov = mean(PRIMINS1 == "Other Government Program", na.rm = TRUE),
+    Indian = mean(PRIMINS1 == "Indian Health Service", na.rm = TRUE),
+    CHIP = mean(PRIMINS1 == "Children's Health Insurance Program (CHIP)", na.rm = TRUE),
+    
+    # Indicator 
+    BP_Chol = mean(risk_group == "Both", na.rm = TRUE),
+    BP = mean(risk_group == "BP Only", na.rm = TRUE),
+    Chol = mean(risk_group == "Chol Only", na.rm = TRUE),
+    Neither = mean(risk_group == "Neither", na.rm = TRUE),
+    Preg_BP = mean(risk_group == "Pregnancy-related BP", na.rm = TRUE),
+    Borderline = mean(risk_group == "Borderline BP", na.rm = TRUE),
+    
+    # Total count per cluster
+    Total = n()
+  )
+
+risk_plot <- cluster_summary %>%
+  select(cluster_k3, BP_Chol, BP, Chol, Borderline) %>%
+  pivot_longer(-cluster_k3, names_to = "risk_type", values_to = "value")
+
+ggplot(risk_plot, aes(x = reorder(risk_type, value), y = value, color = factor(cluster_k3))) +
+  geom_point(size = 3) +
+  geom_segment(aes(xend = risk_type, yend = 0), size = 1) +
+  coord_flip() +
+  labs(title = "Risk Factors by Cluster", x = "Risk Type", y = "Proportion") +
+  theme_minimal()
+```
+Based on the cluster analysis of women who reported high blood pressure or high
+cholesterol, several at-risk subgroups emerge, revealing deep-rooted health disparities.
+The most vulnerable subgroup is Cluster 3, which is composed primarily of Black (44.4%) 
+and Hispanic (27.4%) women. Educational attainment is markedly lower in this group,
+with only 23.3% having a college degree, and over 5% not completing high school.
+In terms of income, over 25% earn less than $35,000 annually, with significant
+representation in the lowest income brackets, including 6.3% earning under $15,000. 
+Access to care is also a major concern: only 31.3% have employer-based insurance, 
+while 12.5% rely on Medicaid and 5.2% have no coverage at all. Alarmingly, this 
+cluster also contains the highest proportion of individuals with both blood pressure
+and cholesterol issues (37.7%).
+
+In contrast, Cluster 1 is predominantly White (100%), with 45% holding college 
+degrees and more stable socioeconomic conditions—13.9% earn less than $75,000,
+and 50% are covered by Medicare or employer insurance. Health risks are slightly
+more balanced, with 39.3% reporting both BP and cholesterol issues, but this
+group benefits from better access to care and resources.
+
+Cluster 2, though small (only 214 individuals), has a unique risk profile. It is 
+composed mostly of American Indian/Alaskan Native women (82.2%), with less than
+11% having a college degree, and over 20% earning under $25,000 annually. While 
+this cluster shows a lower rate of women with both conditions (39.3%), they still 
+face structural health inequities due to low income and limited insurance 
+coverage—no one in this cluster reported employer insurance, and 7.9% have no 
+coverage at all.
+
+Overall, this analysis highlights that racial, socioeconomic, and educational 
+inequities are strongly linked to health outcomes. The disparities seen—particularly 
+among Black, Hispanic, and American Indian/Alaskan Native women with lower income 
+and education—underscore the urgent need for targeted interventions and policies 
+that address the social determinants of health and ensure equitable access to
+preventive services and chronic disease management.
+
+              ### Logisitc Regresion BP and CHol #
+
+```{r setup31, include=FALSE} 
+brfss_clean <- brfss %>%
+  mutate(
+    Hypertension = case_when(
+      BPHIGH6 == "Yes" ~ "Yes",
+      BPHIGH6 == "No" ~ "No",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(Hypertension))
+
+brfss_clean <- brfss_clean %>%
+  mutate(
+    Hypertension_binary = if_else(Hypertension == "Yes", 1, 0)
+  )
+
+logit_hypertension <- glm(Hypertension_binary ~ Race + INCOME3 + EDUCA + PRIMINS1, 
+                           family = binomial(), data = brfss_clean)
+summary(logit_hypertension)
+
+```
+A logistic regression was conducted to examine the association between race, income, education, and health insurance type with the likelihood of having hypertension among women in the United States. The model was statistically significant, suggesting that these factors meaningfully predict hypertension outcomes. Compared to the reference group, Black women had higher odds of hypertension (Estimate = 0.561, p < 0.001), while Asian (Estimate = -0.508, p < 0.001), Hispanic (Estimate = -0.648, p < 0.001), and women of Other races (Estimate = -0.181, p = 0.002) had lower odds. Income was also a strong predictor: women earning less than $10,000 (Estimate = 0.741, p < 0.001) or less than $15,000 (Estimate = 0.886, p < 0.001) had notably higher odds of hypertension compared to higher-income groups, with a consistent pattern of elevated risk across all lower income brackets. Educational attainment showed similar trends: women with only elementary education (Estimate = 0.710, p < 0.001), some high school (Estimate = 0.513, p < 0.001), or some college (Estimate = 0.270, p < 0.001) had greater odds of hypertension compared to college graduates. Regarding insurance status, having Medicare (Estimate = 1.339, p < 0.001) or Medigap insurance (Estimate = 1.131, p = 0.004) was associated with significantly higher odds of hypertension compared to employer-provided insurance. Overall, these results highlight important disparities: lower income, lower education levels, race, and certain insurance types are key factors associated with increased risk of hypertension among women.
+
+```{r setup32, include=FALSE} 
+exp(coef(logit_hypertension))
+#  df w/ coefficients and their confidence intervals
+conf_int <- confint(logit_hypertension)
+coef_df <- data.frame(
+  Variable = rownames(conf_int),
+  LowerCI = exp(conf_int[, 1]),
+  UpperCI = exp(conf_int[, 2]),
+  Coefficient = exp(coef(logit_hypertension))
+)
+
+coef_df <- coef_df %>%
+  filter(Variable != "(Intercept)")
+
+# Plot CI
+ggplot(coef_df, aes(x = reorder(Variable, Coefficient), y = Coefficient)) +
+  geom_point(color = "darkblue") +
+  geom_errorbar(aes(ymin = LowerCI, ymax = UpperCI), width = 0.1) +
+  coord_flip() +  # Flip the axes
+  labs(title = "Coefficient Plot with Confidence Intervals",
+       x = "Predictors",
+       y = "Odds Ratio (95% CI)") +
+  theme_minimal()
+
+library(ggplot2)
+# odds ratios from the coefficients
+odds_ratios <- exp(coef(logit_hypertension))
+
+# Convert the odds ratios to a data frame for plotting
+odds_ratios_df <- data.frame(
+  Variable = names(odds_ratios),
+  OddsRatio = odds_ratios
+)
+
+ggplot(odds_ratios_df, aes(x = reorder(Variable, OddsRatio), y = OddsRatio)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  coord_flip() +  # flip the axes 
+  labs(title = "Odds Ratios from Logistic Regression",
+       x = "Predictors",
+       y = "Odds Ratio") +
+  theme_minimal()
+
+
+```
+In a logistic regression predicting hypertension status, Black respondents had 75% higher odds of hypertension compared to the reference group (OR = 1.75, p < .001). Lower income levels were associated with significantly increased odds of hypertension; for instance, individuals earning less than $10,000 annually had odds of hypertension more than twice as high as those earning over $200,000 (OR = 2.10, p < .001). Similarly, lower educational attainment was associated with increased risk.
+
+
+              ## Chol logit ##
+```{r setup33, include=FALSE} 
+brfss_clean <- brfss_clean %>%
+  mutate(
+    Chol_binary = if_else(TOLDHI3 == "Yes", 1, 0)
+  )
+
+logit_cholesterol <- glm(Chol_binary ~ Race + INCOME3 + EDUCA + PRIMINS1, 
+                           family = binomial(), data = brfss_clean)
+summary(logit_cholesterol)
+exp(coef(logit_cholesterol))
+
+conf_int <- confint(logit_cholesterol)  # 95% CI
+coef_df <- data.frame(
+  Variable = rownames(conf_int),
+  LowerCI = exp(conf_int[, 1]),
+  UpperCI = exp(conf_int[, 2]),
+  Coefficient = exp(coef(logit_cholesterol))
+)
+
+# remove intercept 
+coef_df <- coef_df %>%
+  filter(Variable != "(Intercept)")
+
+ggplot(coef_df, aes(x = reorder(Variable, Coefficient), y = Coefficient)) +
+  geom_point(color = "darkblue") +
+  geom_errorbar(aes(ymin = LowerCI, ymax = UpperCI), width = 0.1) +
+  coord_flip() +  # Flip the axes
+  labs(title = "Odds Ratios for Predicting High Cholesterol",
+       x = "Predictors",
+       y = "Odds Ratio (95% CI)") +
+  theme_minimal()
+```
+
+
+In the logistic regression model predicting the likelihood of having high cholesterol (Chol_binary), several demographic factors were found to be significant predictors. Compared to the reference groups, individuals identifying as White had 1.23 times higher odds of reporting high cholesterol (OR = 1.23, p < .001), while those identifying as Hispanic had lower odds (OR = 0.89, p = .035). Regarding income, individuals earning less than $15,000 per year had significantly higher odds (OR = 1.61, p < .001) of having high cholesterol compared to the highest income group, highlighting a socioeconomic gradient in cholesterol outcomes. Educational attainment also showed a strong association: participants with only an elementary education had 1.56 times the odds of having high cholesterol compared to those with a college degree or more (OR = 1.56, p < .001). Finally, insurance status mattered — those with Medicare had 2.85 times higher odds (OR = 2.85, p = .0015) of high cholesterol compared to those with employer-sponsored insurance, suggesting that older individuals (who are more likely to have Medicare) might have greater health risks tied to cholesterol.
+
+
+                   #### What predicts cardiovascular disease?##
+I have to wls and combine varaibles since outcomes low 
+
+```{r wls recode,  include=FALSE} 
+
+brfss_wls <- brfss %>%
+  mutate(
+    # recode cardiovascular outcomes
+    CVDSTRK3_binary = ifelse(CVDSTRK3 == "Yes", 1, ifelse(CVDSTRK3 == "No", 0, NA)),
+    CVDINFR4_binary = ifelse(CVDINFR4 == "Yes", 1, ifelse(CVDINFR4 == "No", 0, NA)),
+    CVDCRHD4_binary = ifelse(CVDCRHD4 == "Yes", 1, ifelse(CVDCRHD4 == "No", 0, NA))
+  ) %>%
+  # remove NA in predictors
+  filter(
+    !is.na(Race), 
+    !is.na(INCOME3),
+    !is.na(EDUCA),
+    !is.na(PRIMINS1),
+    !is.na(BPHIGH6),
+    !is.na(TOLDHI3)
+  ) %>%
+  # grouping variables
+  mutate(
+    INCOME_group = case_when(
+      INCOME3 %in% c("Less than $10,000", "Less than $15,000", "Less than $20,000", "Less than $25,000") ~ "Low",
+      INCOME3 %in% c("Less than $35,000", "Less than $50,000", "Less than $75,000") ~ "Medium",
+      INCOME3 %in% c("Less than $100,000", "Less than $150,000", "Less than $200,000") ~ "High",
+      TRUE ~ NA_character_
+    ),
+    EDUCA_group = case_when(
+      EDUCA %in% c("Never attended school or only kindergarten", "Elementary", "Some high school") ~ "Low",
+      EDUCA %in% c("High school graduate or GED", "Some college or technical school") ~ "Medium",
+      EDUCA %in% c("College graduate") ~ "High",
+      TRUE ~ NA_character_
+    ),
+    PRIMINS_group = case_when(
+      PRIMINS1 == "Employer Insurance" ~ "Employer",
+      PRIMINS1 == "Private" ~ "Private (Non-Employer)",
+      PRIMINS1 %in% c("Medicaid", "State Sponsored Service", 
+                      "Children's Health Insurance Program (CHIP)") ~ "Public - Medicaid/CHIP",
+      PRIMINS1 %in% c("Medicare", "Medigap") ~ "Public - Medicare",
+      PRIMINS1 %in% c("Military", "Indian Health Service", "Other Government Program") ~ "Public - Other",
+      PRIMINS1 == "No Coverage" ~ "No Coverage",
+      TRUE ~ NA_character_
+    )
+  )
+
+```
+
+
+```{r wls cardiovas, include=FALSE} 
+
+# Stroke
+stroke_data <-brfss_wls %>% filter(!is.na(CVDSTRK3_binary))
+weights_stroke <- ifelse(stroke_data$CVDSTRK3_binary == 1, 
+                         1 / table(stroke_data$CVDSTRK3_binary)["1"],
+                         1 / table(stroke_data$CVDSTRK3_binary)["0"])
+
+wls_model_stroke <- lm(CVDSTRK3_binary ~ Race + INCOME_group + EDUCA_group + 
+                       PRIMINS_group + BPHIGH6 + TOLDHI3, 
+                       data = stroke_data, 
+                       weights = weights_stroke)
+
+summary(wls_model_stroke)
+
+
+# Heart Attack
+heart_data <- brfss_wls %>% filter(!is.na(CVDINFR4_binary))
+weights_heart <- ifelse(heart_data$CVDINFR4_binary == 1, 
+                        1 / table(heart_data$CVDINFR4_binary)["1"],
+                        1 / table(heart_data$CVDINFR4_binary)["0"])
+
+wls_model_heart <- lm(CVDINFR4_binary ~ Race + INCOME_group + EDUCA_group + 
+                      PRIMINS_group + BPHIGH6 + TOLDHI3, 
+                      data = heart_data, 
+                      weights = weights_heart)
+
+summary(wls_model_heart)
+
+
+# Coronary Heart Disease
+chd_data <- brfss_wls %>% filter(!is.na(CVDCRHD4_binary))
+weights_chd <- ifelse(chd_data$CVDCRHD4_binary == 1, 
+                      1 / table(chd_data$CVDCRHD4_binary)["1"],
+                      1 / table(chd_data$CVDCRHD4_binary)["0"])
+
+wls_model_chd <- lm(CVDCRHD4_binary ~ Race + INCOME_group + EDUCA_group + 
+                    PRIMINS_group + BPHIGH6 + TOLDHI3, 
+                    data = chd_data, 
+                    weights = weights_chd)
+
+summary(wls_model_chd)
+
+```
+
+The analysis of stroke risk reveals several key findings. Among the strongest risk factors, a previous diagnosis of high blood pressure (TOLDHI3Yes) was associated with an increase in stroke risk, with a coefficient of +0.118 (p < 0.001). Additionally, low income and public insurance status were also significant risk factors, with coefficients of +0.181 and +0.116, respectively, both showing high statistical significance (p < 0.001). In contrast, certain factors were found to be protective. For instance, being of Asian race and Hispanic ethnicity was associated with lower stroke risk, with coefficients of -0.138 and -0.116 (p < 0.001 for both). Having private insurance also showed a slight protective effect, though with a smaller coefficient of -0.027 (p < 0.01). The model's performance was robust, explaining 17.75% of the variation in stroke risk (Adjusted R² = 0.1774) and yielding a highly significant overall model (F-statistic = 1794, p < 2.2e-16). The model's fit was excellent, with residuals showing a well-distributed pattern, indicating good predictive accuracy. Importantly, the data used in this model had a large sample size (124,650 degrees of freedom), and missing data were appropriately handled. The weighted analysis accounted for survey design, ensuring that the model reflected the target population accurately. The coefficients presented in the model represent changes in stroke risk in log-odds, and all variables with p-values less than 0.05 are considered statistically significant
+
+The weighted least squares (WLS) model revealed several important predictors of heart attack risk. The strongest risk factors were a previous high blood pressure diagnosis (+0.142, p < 0.001), low income (+0.194, p < 0.001), public insurance coverage (+0.140, p < 0.001), and a current diagnosis of high blood pressure (+0.148, p < 0.001). These results highlight both clinical (blood pressure-related) and socioeconomic vulnerabilities. Protective factors included being of Asian race (-0.170, p < 0.001), Hispanic ethnicity (-0.130, p < 0.001), Black race (-0.104, p < 0.001), and White race (-0.045, p < 0.001), indicating that, compared to the reference group, these racial and ethnic categories were associated with a lower risk of heart attack. The model performed well, explaining approximately 21% of the variation in heart attack risk (Adjusted R² = 0.2096) and showed excellent fit with the weighted survey data. The model was highly statistically significant overall (F-statistic = 2205, p < 2.2e-16), and residuals were appropriately distributed. 
+
+
+The weighted least squares (WLS) model identified several important predictors of coronary heart disease (CHD) risk. Strongest risk factors included public insurance coverage (+0.212, p < 0.001), a previous high blood pressure diagnosis (+0.178, p < 0.001), current high blood pressure (+0.160, p < 0.001), low income (+0.145, p < 0.001), and low education (+0.091, p < 0.001). Medium income (+0.084, p < 0.001), medium education (+0.053, p < 0.001), and private insurance (+0.041, p < 0.001) were also associated with higher CHD risk, but to a lesser degree. Protective factors included being of Hispanic ethnicity (-0.101, p < 0.001), Asian race (-0.051, p < 0.001), and Black race (-0.024, p = 0.022), indicating lower risk compared to the reference group. Interestingly, identifying as Other Race (+0.055, p < 0.001) or White (+0.037, p < 0.001) was associated with higher risk. The model explained about 24% of the variation in coronary heart disease risk (Adjusted R² = 0.2396), showed a good fit to the weighted survey data, and was highly statistically significant overall (F-statistic = 2620, p < 2.2e-16).
+
+
+
+```{r poisson cardio, include=FALSE} 
+poisson_stroke <- glm(
+  CVDSTRK3_binary ~ Race + INCOME_group + EDUCA_group + PRIMINS_group,
+  family = poisson(),
+  data = brfss_wls
+)
+summary(poisson_stroke)
+
+poisson_heart_attack<- glm(
+  CVDINFR4_binary ~ Race + INCOME_group + EDUCA_group + PRIMINS_group,
+  family = poisson(),
+  data = brfss_wls
+)
+summary(poisson_heart_attack)
+
+
+poisson_CHD<- glm(
+  CVDCRHD4_binary ~ Race + INCOME_group + EDUCA_group + PRIMINS_group,
+  family = poisson(),
+  data = brfss_wls
+)
+summary(poisson_CHD)
+
+```
+ 
+
+In this Poisson model, individuals with low income (coef = 0.91) and medium income (coef = 0.48) had a higher risk of stroke compared to high-income individuals. Similarly, those with low education (coef = 0.44) and medium education (coef = 0.28) were more at risk compared to those with high education. Having public insurance (coef = 0.76) was associated with higher stroke risk compared to having no insurance. Race also mattered: Asian (coef = -0.63) and Hispanic (coef = -0.62) individuals had a lower risk of stroke compared to the reference group. Other variables like being Black or having private insurance were not significantly related to stroke risk.
+
+In this Poisson model, the risk of heart attack (CVDINFR4) is influenced by several factors. Individuals with low income (coef = 0.99) and medium income (coef = 0.51) have a significantly higher risk of heart attack compared to those with high income. Similarly, those with low education (coef = 0.71) and medium education (coef = 0.40) are at higher risk than individuals with a college education. Public insurance (coef = 0.88) is associated with an increased risk of heart attack compared to having no insurance. In terms of race, Asian (coef = -0.99) and Hispanic (coef = -0.72) individuals have a lower risk of heart attack than the reference group, while Black individuals (coef = -0.27) also show a reduced risk. Race categories such as "Other Race" and "White" are not significantly associated with the risk of heart attack.
+
+In this Poisson model, the risk of coronary heart disease (CVDCRHD4) is influenced by several factors. Individuals with low income (coef = 0.78) and medium income (coef = 0.48) are at higher risk of coronary heart disease compared to those with high income. Similarly, individuals with low education (coef = 0.54) and medium education (coef = 0.30) face a higher risk than those with a college education. Public insurance (coef = 1.32) is strongly associated with an increased risk of coronary heart disease compared to having no insurance, while private insurance (coef = 0.31) has a smaller, yet still significant, effect. In terms of race, Asian individuals (coef = -0.44) and Hispanic individuals (coef = -0.73) have a significantly lower risk of coronary heart disease compared to the reference group. Additionally, White individuals (coef = 0.24) show a moderate, significant increase in risk, while "Other Race" shows a borderline significant association (coef = 0.24). Race categories like Black (coef = 0.04) are not significantly associated with coronary heart disease risk.
+
+
+```{r MANOVA cardio, include=FALSE} 
+#  MANOVA for multiple CVD outcomes
+manova_model <- manova(cbind(CVDSTRK3_binary, CVDINFR4_binary, CVDCRHD4_binary) ~ Race + INCOME_group + EDUCA_group + PRIMINS_group, data = brfss_wls)
+
+summary(manova_model)
+
+```
+The results from the MANOVA analysis indicate that race, income, education, and primary insurance type all have significant effects on cardiovascular disease outcomes. Specifically, Race shows a significant influence (p < 2.2e-16), with disparities across different racial groups in relation to cardiovascular diseases. For example, the effect of RaceAsian is negative (-0.44242), indicating lower cardiovascular risk compared to the reference group, while RaceHispanic shows a stronger negative effect (-0.72600). Income also plays a crucial role, with those in the Low income group having a much higher risk of cardiovascular diseases (coefficient = 0.77651) compared to higher income groups. Similarly, individuals in the Medium income group (coefficient = 0.47668) also show elevated risk levels. Education follows a similar trend, with those in the Low education group (coefficient = 0.53617) having significantly higher cardiovascular risks compared to those with higher education levels. Finally, Primary insurance type is significant, with those having Public insurance (coefficient = 1.32193) showing the highest cardiovascular risks, while those with Private insurance (coefficient = 0.30986) show a lower, but still positive, association with cardiovascular disease risk. Overall, these findings underscore the disparities in cardiovascular health based on socio-demographic factors, with race, income, education, and insurance type all playing substantial roles.
+
+
+```{r cvd + insurance, include=FALSE} 
+library(dplyr)
+# combined binary variable for any CVD condition
+brfss_wls <- brfss_wls %>%
+  mutate(CVD_combined = if_else(
+    CVDSTRK3_binary == 1 | CVDINFR4_binary == 1 | CVDCRHD4_binary == 1,
+    1, 0, missing = NA_real_
+  ))
+
+# CVD rates by state
+state_cvd_rates <- brfss_wls %>%
+  group_by(State) %>%
+  summarise(
+    N = n(),
+    stroke_rate = mean(CVDSTRK3_binary, na.rm = TRUE) * 1000,
+    heart_rate = mean(CVDINFR4_binary, na.rm = TRUE) * 1000,
+    chd_rate = mean(CVDCRHD4_binary, na.rm = TRUE) * 1000
+  ) %>%
+  arrange(desc(stroke_rate))  
+
+# CVD rates by insurance type and state
+cvd_by_state_insurance <- brfss_wls %>%
+  group_by(State, PRIMINS_group) %>%
+  summarise(
+    CVD_rate = mean(CVD_combined, na.rm = TRUE),
+    N = n()
+  ) %>%
+  arrange(desc(CVD_rate))
+
+# ~CVD rate by insurance type nationally
+cvd_by_insurance_national <- brfss_wls %>%
+  group_by(PRIMINS_group) %>%
+  summarise(
+    avg_CVD_rate = mean(CVD_combined, na.rm = TRUE),
+    total_n = n()
+  ) %>%
+  arrange(avg_CVD_rate)
+
+#  extremes by insurance group
+top_cvd_states_by_insurance <- cvd_by_state_insurance %>%
+  group_by(PRIMINS_group) %>%
+  slice_max(CVD_rate, n = 1, with_ties = FALSE)
+
+low_cvd_states_by_insurance <- cvd_by_state_insurance %>%
+  group_by(PRIMINS_group) %>%
+  slice_min(CVD_rate, n = 1, with_ties = FALSE)
+
+#install.packages("lme4")
+library(lme4)
+#install.packages("broom.mixed")
+library(broom.mixed)
+
+# Multilevel logistic model 
+cvd_model <- glmer(
+  CVD_combined ~ PRIMINS_group + (1 | State),
+  data = brfss_wls,
+  family = binomial
+)
+
+summary(cvd_model)
+
+
+# random effects
+random_effects <- ranef(cvd_model, condVar = TRUE)$State
+state_re <- tibble(
+  state = rownames(random_effects),
+  intercept = random_effects[, "(Intercept)"]
+)
+
+ggplot(state_re, aes(x = reorder(state, intercept), y = intercept)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  coord_flip() +
+  labs(title = "State-Level Random Intercepts for CVD",
+       y = "Deviation from Overall Intercept (log-odds)", x = "State") +
+  theme_minimal()
+
+library(broom.mixed)
+library(ggplot2)
+library(dplyr)
+
+# Tidy fixed effects from the model
+#fixed_effects <- tidy(cvd_model, effects = "fixed", conf.int = TRUE)
+
+# Exponentiate to get odds ratios
+#fixed_effects <- fixed_effects %>%
+  #mutate(OR = exp(estimate),
+        # OR_low = exp(conf.low),
+        # OR_high = exp(conf.high))
+
+# Plot
+#ggplot(fixed_effects, aes(x = term, y = OR)) +
+ # geom_point() +
+  #geom_errorbar(aes(ymin = OR_low, ymax = OR_high), width = 0.2) +
+  #geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+ # coord_flip() +
+ # labs(title = "Odds Ratios for CVD by Insurance Type",
+   #    y = "Odds Ratio (95% CI)", x = "") +
+ # theme_minimal()
+```
+
+This multilevel logistic regression model examines how different types of health insurance coverage influence the likelihood of experiencing cardiovascular disease (CVD), while accounting for geographic variation through random intercepts at the state level. The model structure,incorporates fixed effects for insurance type and random effects for state-level variation.
+
+Findings reveal substantial state-to-state differences in baseline CVD risk, with a random intercept variance of 0.0357 (SD ≈ 0.1889), suggesting moderate regional disparities, potentially influenced by local health infrastructure, policies, or demographics.
+
+Insurance coverage type significantly impacts CVD risk: compared to uninsured individuals, those on Medicare show the greatest protective association (OR ≈ 5.06), followed by other public insurance (OR ≈ 2.50), Medicaid/CHIP (OR ≈ 3.06), and private non-employer plans (OR ≈ 1.99). Even minimal coverage provides a protective effect over no insurance (OR ≈ 1.54).
+
+With a robust sample size (n = 133,980), the model provides precise and statistically significant estimates (all p < 0.001), with large z-values supporting the validity of the findings. While the scaled residuals suggest a good model fit, occasional high positive outliers indicate the presence of a few unexpected cases.
+
+These results imply that state-level differences in healthcare access and insurance coverage significantly shape individual health outcomes, emphasizing the critical role of geography in chronic disease risk. While the model does not establish causality, the significant variation across states highlights the importance of both individual-level insurance access and broader state-level healthcare contexts.
+
+
+```{r cvd + insurance2, include=FALSE} 
+library(lme4)
+
+cvd_model_slopes <- glmer(
+  CVD_combined ~ PRIMINS_group + (PRIMINS_group | State),
+  data = brfss_wls,
+  family = binomial
+)
+ranef(cvd_model_slopes)$State
+
+
+
+cvd_model_slopes <- glmer(
+  CVD_combined ~ PRIMINS_group + (1 + PRIMINS_group | State),
+  data = brfss_wls,
+  family = binomial
+)
+
+
+library(broom.mixed)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+#  random effects
+random_slopes <- ranef(cvd_model_slopes)$State %>%
+  tibble::rownames_to_column("State") %>%
+  pivot_longer(cols = -State, names_to = "Term", values_to = "Effect")
+
+
+random_slopes <- random_slopes %>%
+  mutate(
+    Insurance_Type = gsub("PRIMINS_group", "", Term),
+    Insurance_Type = ifelse(Insurance_Type == "(Intercept)", "Baseline", Insurance_Type)
+  )
+
+
+
+library(tidyverse)
+
+
+state_effects_df <- as.data.frame(ranef(cvd_model_slopes)$State) %>%
+  rownames_to_column("State") %>%
+  pivot_longer(-State, names_to = "Term", values_to = "Effect") %>%
+  filter(!str_detect(Term, "Intercept"))  # remove intercept
+
+
+state_effects_df <- state_effects_df %>%
+  mutate(Term = str_replace(Term, "PRIMINS_group", ""))  # Shorten labels
+
+ggplot(state_effects_df, aes(x = Term, y = fct_reorder(State, Effect), fill = Effect)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    panel.grid = element_blank()
+  ) +
+  labs(
+    title = "How Insurance Effects on CVD Vary by State",
+    x = "Insurance Type",
+    y = "State",
+    fill = "Effect Size"
+  )
+
+
+ggplot(state_effects_df, aes(x = Term, y = fct_reorder(State, Effect), fill = Effect)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    axis.text.y = element_text(size = 6),  # smaller font for state names
+    panel.grid = element_blank(),
+    plot.margin = margin(10, 20, 10, 10)
+  ) +
+  labs(
+    title = "Variation in CVD Risk by Insurance Type and State",
+    x = "Insurance Type",
+    y = "State",
+    fill = "Effect Size"
+  )
+
+
+
+
+
+ggplot(state_effects_df, aes(x = fct_reorder(State, Effect), y = Term, fill = Effect)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal(base_size = 10) +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 10),
+    panel.grid = element_blank()
+  ) +
+  labs(
+    title = "Variation in CVD Risk by Insurance Type and State",
+    x = "State",
+    y = "Insurance Type",
+    fill = "Effect Size"
+  )
+
+
+
+
+
+
+summary(cvd_model_slopes)$coefficients
+
+ranef(cvd_model_slopes)$State
+
+state_effect_ <- ranef(cvd_model_slopes)$State
+head(state_effect_)
+
+library(tibble)
+library(tidyr)
+
+# Add state names as a column
+state_effects_tidy <- state_effects %>%
+  rownames_to_column(var = "State") %>%
+  as_tibble()
+
+# View the tidy data
+print(state_effects_tidy)
+
+
+
+ggplot(state_effects_long, aes(x = Insurance_Type, y = fct_reorder(State, Effect), fill = Effect)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+  theme_minimal(base_size = 10) +
+  labs(title = "Random Effects Heatmap by State",
+       x = "Insurance Type", y = "State") +
+  theme(axis.text.y = element_text(size = 6),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+state_effects_long <- state_effects_long %>%
+  mutate(Region = state.region[match(State, state.name)])  # Requires state.name to match
+
+ggplot(state_effects_long, aes(x = Insurance_Type, y = fct_reorder(State, Effect), fill = Effect)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+  facet_wrap(~ Region, scales = "free_y") +
+  theme_minimal(base_size = 10) +
+  labs(title = "State-Level Effects by Region and Insurance Type",
+       x = "Insurance Type", y = "State") +
+  theme(axis.text.y = element_text(size = 6))
+
+
+
+
+
+library(ggplot2)
+library(dplyr)
+
+# Create individual plots for each region
+regions <- unique(state_effects_long$Region)
+
+# Loop through regions and create separate plots
+for (region in regions) {
+  # Filter data for current region
+  region_data <- state_effects_long %>%
+    filter(Region == region)
+  
+  # Create plot for current region
+  plot <- ggplot(region_data, aes(x = Insurance_Type, y = fct_reorder(State, Effect), fill = Effect)) +
+    geom_tile(color = "white") +
+    scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+    theme_minimal(base_size = 12) +
+    labs(
+      title = paste("State-Level Effects in", region),
+      x = "Insurance Type",
+      y = "State"
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  # Adjust x-axis label angle and size
+      plot.margin = unit(c(1, 1, 15, 1), "mm")
+    )
+  
+  # Print the plot
+  print(plot)
+  print(paste("Plotting region:", region))
+}
+
+
+
+
+
+ggplot(random_slopes, aes(x = reorder(State, Effect), y = Effect, fill = Insurance_Type)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "Effect of Insurance Type on CVD Risk by State",
+    subtitle = "Random slopes from multilevel model",
+    x = "State",
+    y = "Effect on log-odds of CVD",
+    fill = "Insurance Type"
+  ) +
+  theme_minimal()
+
+
+
+random_slopes <- random_slopes %>%
+  group_by(Insurance_Type) %>%
+  arrange(desc(Effect), .by_group = TRUE) %>%
+  mutate(State_rank = row_number(),
+         Group = ifelse(State_rank <= 25, "Top 25", "Bottom 25"))
+ggplot(random_slopes, aes(x = reorder(State, Effect), y = Effect, fill = Insurance_Type)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  facet_wrap(~Group, scales = "free_y") +
+  labs(
+    title = "Effect of Insurance Type on CVD Risk by State",
+    subtitle = "Random slopes from multilevel model, split for readability",
+    x = "State",
+    y = "Effect on log-odds of CVD",
+    fill = "Insurance Type"
+  ) +
+  theme_minimal()
+
+# Rank states by effect of insurance type on CVD and split into top and bottom 5
+random_slopes <- random_slopes %>%
+  group_by(Insurance_Type) %>%
+  arrange(desc(Effect), .by_group = TRUE) %>%
+  mutate(State_rank = row_number(),
+         Group = ifelse(State_rank <= 5, "Top 5", ifelse(State_rank > n() - 5, "Bottom 5", "Other"))) %>%
+  filter(Group %in% c("Top 5", "Bottom 5"))
+
+# Create the plot for the top and bottom 5 states
+ggplot(random_slopes, aes(x = reorder(State, Effect), y = Effect, fill = Insurance_Type)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  facet_wrap(~Group, scales = "free_y") +
+  labs(
+    title = "Effect of Insurance Type on CVD Risk by State",
+    subtitle = "Random slopes from multilevel model, split for readability",
+    x = "State",
+    y = "Effect on log-odds of CVD",
+    fill = "Insurance Type"
+  ) +
+  theme_minimal()
+
+
+# Load required packages
+library(ggplot2)
+library(dplyr)
+library(viridis)
+library(maps)
+
+# Get US states map data
+states_map <- map_data("state")
+
+# Join with your summarized state-level CVD data
+map_data_joined <- left_join(states_map, state_cvd_rates, by = "region")
+
+# Plot the full US map with combined CVD rate
+ggplot(map_data_joined, aes(x = long, y = lat, group = group, fill = CVD_rate)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  scale_fill_viridis_c(option = "magma", name = "CVD Rate\n(per 1,000)") +
+  labs(
+    title = "Combined CVD Rates by State",
+    subtitle = "Per 1,000 Women",
+    caption = "Source: BRFSS"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+# Extract random intercepts
+state_effects <- ranef(cvd_model)$State %>%
+  as.data.frame() %>%
+  rename(RandomIntercept = condval) %>%
+  select(State = grp, RandomIntercept)
+
+# Add fixed effect summary
+fixed_effects <- summary(cvd_model)$coefficients %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "InsuranceType")
+
+# View both outputs
+head(state_effects)
+head(fixed_effects)
+
+# Extract raw random effects
+state_effects <- ranef(cvd_model)$State
+
+# Convert to data frame with state names
+state_effects_df <- as.data.frame(state_effects)
+
+# Clean column names: the random intercept should be in a column like "(Intercept)"
+colnames(state_effects_df)
+
+
+```
+
